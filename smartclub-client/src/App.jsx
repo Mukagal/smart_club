@@ -10,6 +10,8 @@ import BookingPage from "./pages/booking/BookingPage";
 import History from "./pages/history/History";
 import MyAccount from "./pages/account/MyAccount";
 import ClubDetails from "./pages/clubs/ClubDetails";
+import Payment from "./pages/payment/PaymentPage"
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
             <Route path="/history" element={<History />} />
             <Route path="/account" element={<MyAccount />} />
             <Route path="*" element={<Navigate to="/" />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
           </Routes>
         </BrowserRouter>
       </UiProvider>

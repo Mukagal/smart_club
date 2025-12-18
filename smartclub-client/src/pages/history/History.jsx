@@ -149,10 +149,10 @@ export default function History() {
       <MenuModal isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <div className="max-w-4xl mx-auto p-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
           <h1 className="text-2xl font-bold">История бронирований</h1>
           <div>
-            <button onClick={handleClear} disabled={clearing} className={`px-3 py-2 rounded ${clearing ? "bg-red-500/60" : "bg-red-600"} text-white text-sm`}>
+            <button onClick={handleClear} disabled={clearing} className={`w-full sm:w-auto px-3 py-2 rounded ${clearing ? "bg-red-500/60" : "bg-red-600"} text-white text-sm`}>
               {clearing ? "Удаление..." : "Очистить историю"}
             </button>
           </div>
@@ -167,33 +167,33 @@ export default function History() {
         ) : (
           <div className="space-y-4">
             {history.map((r) => (
-              <div key={r.id} className="bg-[#1E1E1E] p-4 rounded-lg border border-gray-800 flex flex-col md:flex-row md:justify-between gap-4">
+              <div key={r.id} className="bg-[#1E1E1E] p-3 sm:p-4 rounded-lg border border-gray-800 flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
-                  <div className="font-extrabold text-lg tracking-wide mb-1">{r.clubName ?? r.clubId}</div>
+                  <div className="font-extrabold text-base sm:text-lg tracking-wide mb-1 break-words">{r.clubName ?? r.clubId}</div>
                   {r.clubId && (clubsCache.current[r.clubId]?.address || r.address) && (
                     <div className="text-sm text-gray-400 mb-2">{clubsCache.current[r.clubId]?.address ?? r.address}</div>
                   )}
                   <div className="text-sm text-gray-300 mb-1">Пакет: {r.packageName ?? r.packageId ?? "—"}</div>
                   <div className="text-sm text-gray-300">Время: {formatDateRangeShort(r.start, r.end)}</div>
-                  <div className="text-sm text-gray-300 mt-1">Места: {r.seatLabels && r.seatLabels.length ? r.seatLabels.join(", ") : (r.seatIds ? r.seatIds.join(", ") : "—")}</div>
+                  <div className="text-sm text-gray-300 mt-1 break-words">Места: {r.seatLabels && r.seatLabels.length ? r.seatLabels.join(", ") : (r.seatIds ? r.seatIds.join(", ") : "—")}</div>
                 </div>
 
-                <div className="w-48 flex flex-col items-end justify-between">
-                  <div className="text-sm text-gray-400 text-right">
+                <div className="w-full md:w-48 flex flex-col items-start md:items-end gap-3 md:gap-0">
+                  <div className="text-sm text-gray-400 text-left md:text-right w-full">
                     <div>Статус: <span className="font-semibold text-white">{r.status}</span></div>
                     <div className="mt-2">Стоимость: <span className="font-semibold text-white">{r.totalPrice ? `${r.totalPrice} ₸` : "—"}</span></div>
                   </div>
 
-                  <div className="flex flex-col gap-2 mt-3 md:mt-0">
+                  <div className="flex flex-col gap-2 mt-3 md:mt-0 w-full md:items-end">
                     {r.status !== "CANCELLED" && new Date(r.end) > new Date() ? (
-                      <button onClick={() => handleCancel(r.id)} disabled={cancelling[r.id]} className="px-3 py-2 rounded bg-red-600 text-white">
+                      <button onClick={() => handleCancel(r.id)} disabled={cancelling[r.id]} className="w-full md:w-auto px-3 py-2 rounded bg-red-600 text-white">
                         {cancelling[r.id] ? "Отмена..." : "Отменить"}
                       </button>
                     ) : (
                       <div className="text-xs text-gray-400">Прошло / Отменено</div>
                     )}
 
-                    <button onClick={() => handleRepeat(r)} className="px-3 py-2 rounded bg-pink-600 text-white">Повторить бронь</button>
+                    <button onClick={() => handleRepeat(r)} className="w-full md:w-auto px-3 py-2 rounded bg-pink-600 text-white">Повторить бронь</button>
                   </div>
                 </div>
               </div>

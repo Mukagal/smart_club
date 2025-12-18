@@ -334,6 +334,8 @@ export default function BookingWidget({
     else setSelectedSeats(prev => [...prev, seat.id]);
   };
 
+
+
   const handleReserve = async () => {
     if (!startIsoUTC || !endIsoUTC) { notify("error", "Выберите дату/время."); return; }
     if (!selectedSeats.length) { notify("error", "Выберите хотя бы одно место."); return; }
@@ -380,6 +382,24 @@ export default function BookingWidget({
           const filtered = rawSeats.filter(s => pkgVip ? s.isVip === true : !s.isVip);
           setSeats(filtered);
           setSelectedSeats([]);
+          notify("success", "Переход к оплате...");
+  
+          navigate("/payment", {
+            state: {
+              reservationId:res?.data?.reservationId,
+              clubName: club?.name,
+              totalPrice: computed,
+              clubId: clubId,
+              packageName: selectedPackage?.service ?? selectedPackage?.title,
+              start: startIsoUTC,
+              end: endIsoUTC,
+              seatCount: selectedSeats.length,
+              seatIds: selectedSeats,
+              packageId: selectedPackage?.service ?? selectedPackage?.id ?? selectedPackage?.title,
+              durationMinutes: Math.round(durationHours * 60)
+            }
+          });
+          
         } catch (e) {}
         return;
       }
@@ -392,6 +412,7 @@ export default function BookingWidget({
       console.error("Reserve error", err);
       notify("error", "Ошибка бронирования: " + (err?.message ?? err));
     }
+    
   };
 
   // layout helpers
@@ -549,7 +570,7 @@ export default function BookingWidget({
         <div className="flex items-center gap-3">
           {!user && <div className="text-xs text-gray-400">Войдите, чтобы бронировать</div>}
           <button onClick={handleReserve} disabled={!user || !selectedSeats.length} className={`px-4 py-2 rounded-lg font-semibold text-white ${!user || !selectedSeats.length ? "bg-gray-600" : "bg-gradient-to-r from-pink-500 to-purple-500"}`}>
-            Забронировать
+            Book
           </button>
         </div>
       </div>

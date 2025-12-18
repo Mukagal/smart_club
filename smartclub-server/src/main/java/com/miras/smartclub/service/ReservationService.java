@@ -153,4 +153,15 @@ public class ReservationService {
                 .filter(r -> r.getStatus() == Reservation.ReservationStatus.CANCELLED || r.getEnd() == null || !r.getEnd().after(now))
                 .collect(Collectors.toList());
     }
+    public void activateReservation(String reservationId, String paymentIntentId) {
+        Reservation reservation = reservationRepository
+                .findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found: " + reservationId));
+
+        System.out.println("🔄 Activating reservation: " + reservationId);
+        reservation.setStatus(Reservation.ReservationStatus.ACTIVE);
+        reservation.setPaymentIntentId(paymentIntentId);
+        Reservation saved = reservationRepository.save(reservation);
+        System.out.println("✅ Reservation activated: " + saved.getId() + " | Status: " + saved.getStatus());
+    }
 }
