@@ -19,11 +19,14 @@ public class Reservation {
     private String packageId;
     private Integer totalPrice;
     private Date createdAt = new Date();
-    private ReservationStatus status = ReservationStatus.ACTIVE;
+    private ReservationStatus status = ReservationStatus.PENDING; 
     private Date cancelledAt;
     private String cancelledBy;
 
-    public enum ReservationStatus { ACTIVE, CANCELLED }
+    private String paymentIntentId; 
+
+
+    public enum ReservationStatus { PENDING, ACTIVE, CANCELLED }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -51,4 +54,6 @@ public class Reservation {
     public void setCancelledAt(Date cancelledAt) { this.cancelledAt = cancelledAt; }
     public String getCancelledBy() { return cancelledBy; }
     public void setCancelledBy(String cancelledBy) { this.cancelledBy = cancelledBy; }
+    public String getPaymentIntentId() { return paymentIntentId; }
+    public void setPaymentIntentId(String paymentIntentId) { this.paymentIntentId = paymentIntentId; }
 }

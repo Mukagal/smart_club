@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * Контроллер бронирований — улучшенная версия с вычислением totalPrice на сервере
@@ -89,6 +88,7 @@ public class BookingController {
         r.setDurationMinutes(req.getDurationMinutes());
         r.setPackageId(req.getPackageId());
         r.setUserId(userId);
+        r.setStatus(Reservation.ReservationStatus.PENDING); // ADD THIS LINE - default to PENDING until payment
 
         // Compute price: prefer provided, otherwise compute on server
         Integer provided = req.getTotalPrice();
