@@ -1,6 +1,6 @@
 // src/pages/main/Home.jsx
 import React, { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
@@ -36,70 +36,61 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [activeMarkerId, setActiveMarkerId] = useState(null);
-  const [activeIndex, setActiveIndex] = useState(0); // қай клуб баннерде тұр
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [mapExpanded, setMapExpanded] = useState(false); // New state for map animation
 
   const navigate = useNavigate();
   const almatyCenter = [43.238949, 76.889709];
-// Клубтарды жүктеу
-useEffect(() => {
-  let mounted = true;
 
-  (async () => {
-    setLoading(true);
-    setLoadError(null);
+  // Клубтарды жүктеу
+  useEffect(() => {
+    let mounted = true;
 
-    try {
-      const res = await apiGet("/clubs");
-      const data = Array.isArray(res) ? res : res?.data ?? res;
+    (async () => {
+      setLoading(true);
+      setLoadError(null);
 
-      if (mounted) {
-        if (Array.isArray(data)) {
+      try {
+        const res = await apiGet("/clubs");
+        const data = Array.isArray(res) ? res : res?.data ?? res;
 
-          // ➜ IMPORTED LOCAL IMAGES
-          // (You must add these imports at the top of the file!)
-          //
-          // import banner1 from "../../assets/clubs/1.jpg";
-          // import banner2 from "../../assets/clubs/2.jpg";
-          // import banner3 from "../../assets/clubs/3.jpg";
-          // import banner4 from "../../assets/clubs/4.jpg";
-          // import banner5 from "../../assets/clubs/5.jpg";
-          //
-          const BANNERS = [banner1, banner2, banner3, banner4, banner5,banner6,banner7,banner8,banner9,banner10];
+        if (mounted) {
+          if (Array.isArray(data)) {
+            const enhanced = data.map((club, index) => ({
+              ...club,
+              bannerUrl: BANNERS[index % BANNERS.length],
+            }));
 
-          // ➜ Attach a banner to each club
-          const enhanced = data.map((club, index) => ({
-            ...club,
-            bannerUrl: BANNERS[index % BANNERS.length], // cycles 1..5
-          }));
-
-          setClubs(enhanced);
-          setActiveIndex(0);
-
-        } else {
-          console.warn("Unexpected /clubs response shape:", data);
+            setClubs(enhanced);
+            setActiveIndex(0);
+          } else {
+            console.warn("Unexpected /clubs response shape:", data);
+            setClubs([]);
+          }
+        }
+      } catch (err) {
+        console.error("Ошибка загрузки клубов:", err);
+        if (mounted) {
+          setLoadError(err.message || "Ошибка загрузки");
           setClubs([]);
         }
+      } finally {
+        if (mounted) setLoading(false);
       }
-    } catch (err) {
-      console.error("Ошибка загрузки клубов:", err);
-      if (mounted) {
-        setLoadError(err.message || "Ошибка загрузки");
-        setClubs([]);
-      }
-    } finally {
-      if (mounted) setLoading(false);
-    }
-  })();
+    })();
 
-  return () => {
-    mounted = false;
-  };
-}, []);
-
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const activeClub = clubs[activeIndex] || null;
-
   const openClub = (club) => navigate(`/clubs/${club.id}`);
+
+  // Toggle map expansion with smooth animation
+  const toggleMap = () => {
+    setMapExpanded(!mapExpanded);
+  };
 
   return (
     <div className="min-h-screen bg-[#05050b] text-white font-sans">
@@ -266,96 +257,127 @@ useEffect(() => {
           </aside>
         </section>
 
-        {/* MAP SECTION */}
+        {/* MAP SECTION with Animation */}
         <section className="space-y-3">
-          <p className="text-center text-xs sm:text-sm text-gray-400">
-            Или выберите через карту:
-          </p>
+          <div className="flex items-center justify-center gap-3">
+            <p className="text-center text-xs sm:text-sm text-gray-400">
+              Или выберите через карту:
+            </p>
+            <button
+              onClick={toggleMap}
+              className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-4 py-2 text-xs font-medium text-blue-300 transition-all duration-300 hover:scale-105"
+            >
+              {mapExpanded ? (
+                <>
+                  <ChevronUp size={14} />
+                  Свернуть карту
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={14} />
+                  Развернуть карту
+                </>
+              )}
+            </button>
+          </div>
 
-          <div className="relative rounded-2xl border border-blue-500/60 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent overflow-hidden shadow-xl shadow-black/60">
+          <div 
+            className="relative rounded-2xl border border-blue-500/60 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent overflow-hidden shadow-xl shadow-black/60 transition-all duration-700 ease-in-out"
+            style={{
+              maxHeight: mapExpanded ? '800px' : '480px',
+              opacity: mapExpanded ? 1 : 0.85,
+            }}
+          >
             <div className="absolute top-3 left-4 z-10 rounded-full bg-black/60 backdrop-blur px-3 py-1 text-[11px] text-gray-200 border border-white/10">
               Карта компьютерных клубов
             </div>
 
-            <MapContainer
-              center={almatyCenter}
-              zoom={12}
-              scrollWheelZoom={true}
-              style={{ height: "480px", width: "100%" }}
+            <div 
+              className="transition-all duration-700 ease-in-out"
+              style={{ 
+                height: mapExpanded ? '800px' : '480px',
+              }}
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <MapContainer
+                center={almatyCenter}
+                zoom={12}
+                scrollWheelZoom={true}
+                style={{ height: "100%", width: "100%" }}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-              {clubs
-                .filter((c) => c.latitude && c.longitude)
-                .map((club) => (
-                  <Marker
-                    key={club.id}
-                    position={[club.latitude, club.longitude]}
-                    icon={markerIcon}
-                    eventHandlers={{
-                      click: (e) => {
-                        if (activeMarkerId === club.id) {
-                          openClub(club);
-                        } else {
+                {clubs
+                  .filter((c) => c.latitude && c.longitude)
+                  .map((club) => (
+                    <Marker
+                      key={club.id}
+                      position={[club.latitude, club.longitude]}
+                      icon={markerIcon}
+                      eventHandlers={{
+                        click: (e) => {
+                          if (activeMarkerId === club.id) {
+                            openClub(club);
+                          } else {
+                            setActiveMarkerId(club.id);
+                            try {
+                              e.target.openPopup();
+                            } catch {}
+                          }
+                        },
+                        mouseover: (e) => {
                           setActiveMarkerId(club.id);
                           try {
                             e.target.openPopup();
                           } catch {}
-                        }
-                      },
-                      mouseover: (e) => {
-                        setActiveMarkerId(club.id);
-                        try {
-                          e.target.openPopup();
-                        } catch {}
-                      },
-                      mouseout: () => {},
-                    }}
-                  >
-                    <Popup>
-                      <div
-                        className="max-w-xs space-y-1"
-                        onClick={() => openClub(club)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") openClub(club);
-                        }}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <div className="font-semibold text-sm mb-1">
-                          {club.name}
-                        </div>
-                        {club.address && (
-                          <div className="text-[11px] text-gray-600 mb-2">
-                            {club.address}
+                        },
+                        mouseout: () => {},
+                      }}
+                    >
+                      <Popup>
+                        <div
+                          className="max-w-xs space-y-1"
+                          onClick={() => openClub(club)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") openClub(club);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <div className="font-semibold text-sm mb-1">
+                            {club.name}
                           </div>
-                        )}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={(ev) => {
-                              ev.stopPropagation();
-                              openClub(club);
-                            }}
-                            className="px-2 py-1 rounded bg-blue-600 text-white text-[11px] hover:bg-blue-700 transition"
-                          >
-                            Подробнее
-                          </button>
-                          {club.phone && (
-                            <a
-                              href={`tel:${club.phone.replace(/\D/g, "")}`}
-                              onClick={(ev) => ev.stopPropagation()}
-                              className="px-2 py-1 rounded border border-gray-300 text-[11px] text-gray-800 bg-white hover:bg-gray-100 transition"
-                            >
-                              Позвонить
-                            </a>
+                          {club.address && (
+                            <div className="text-[11px] text-gray-600 mb-2">
+                              {club.address}
+                            </div>
                           )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                openClub(club);
+                              }}
+                              className="px-2 py-1 rounded bg-blue-600 text-white text-[11px] hover:bg-blue-700 transition"
+                            >
+                              Подробнее
+                            </button>
+                            {club.phone && (
+                              <a
+                                href={`tel:${club.phone.replace(/\D/g, "")}`}
+                                onClick={(ev) => ev.stopPropagation()}
+                                className="px-2 py-1 rounded border border-gray-300 text-[11px] text-gray-800 bg-white hover:bg-gray-100 transition"
+                              >
+                                Позвонить
+                              </a>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-            </MapContainer>
+                      </Popup>
+                    </Marker>
+                  ))}
+              </MapContainer>
+            </div>
           </div>
         </section>
       </main>
