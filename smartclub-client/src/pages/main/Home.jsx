@@ -1,5 +1,5 @@
 // src/pages/main/Home.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -8,6 +8,21 @@ import { apiGet } from "../../api/api.js";
 import Navbar from "../../components/Navbar";
 import MenuModal from "../../components/MenuModal";
 
+// Local banner images
+import banner1 from "../../assets/clubs/1.jpg";
+import banner2 from "../../assets/clubs/2.jpg";
+import banner3 from "../../assets/clubs/3.jpg";
+import banner4 from "../../assets/clubs/4.jpg";
+import banner5 from "../../assets/clubs/5.jpg";
+import banner6 from "../../assets/clubs/1.jpg";
+import banner7 from "../../assets/clubs/2.jpg";
+import banner8 from "../../assets/clubs/3.jpg";
+import banner9 from "../../assets/clubs/4.jpg";
+import banner10 from "../../assets/clubs/5.jpg";
+
+const BANNERS = [banner1, banner2, banner3, banner4, banner5,banner6,banner7,banner8,banner9,banner10];
+
+
 const markerIcon = new L.Icon({
   iconUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -15,235 +30,342 @@ const markerIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-function chunkArray(arr, size) {
-  const res = [];
-  for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
-  return res;
-}
-
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [activeMarkerId, setActiveMarkerId] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0); // қай клуб баннерде тұр
+
   const navigate = useNavigate();
+  const almatyCenter = [43.238949, 76.889709];
+// Клубтарды жүктеу
+useEffect(() => {
+  let mounted = true;
 
-  const [itemsPerPage, setItemsPerPage] = useState(4);
-  const [pageIndex, setPageIndex] = useState(0);
-  const containerRef = useRef(null);
+  (async () => {
+    setLoading(true);
+    setLoadError(null);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLoading(true);
-      setLoadError(null);
-      try {
-        const res = await apiGet("/clubs");
-        const data = Array.isArray(res) ? res : res?.data ?? res;
-        if (mounted) {
-          if (Array.isArray(data)) {
-            setClubs(data);
-          } else {
-            console.warn("Unexpected /clubs response shape:", data);
-            setClubs([]);
-          }
-        }
-      } catch (err) {
-        console.error("Ошибка загрузки клубов:", err);
-        if (mounted) {
-          setLoadError(err.message || "Ошибка загрузки");
+    try {
+      const res = await apiGet("/clubs");
+      const data = Array.isArray(res) ? res : res?.data ?? res;
+
+      if (mounted) {
+        if (Array.isArray(data)) {
+
+          // ➜ IMPORTED LOCAL IMAGES
+          // (You must add these imports at the top of the file!)
+          //
+          // import banner1 from "../../assets/clubs/1.jpg";
+          // import banner2 from "../../assets/clubs/2.jpg";
+          // import banner3 from "../../assets/clubs/3.jpg";
+          // import banner4 from "../../assets/clubs/4.jpg";
+          // import banner5 from "../../assets/clubs/5.jpg";
+          //
+          const BANNERS = [banner1, banner2, banner3, banner4, banner5,banner6,banner7,banner8,banner9,banner10];
+
+          // ➜ Attach a banner to each club
+          const enhanced = data.map((club, index) => ({
+            ...club,
+            bannerUrl: BANNERS[index % BANNERS.length], // cycles 1..5
+          }));
+
+          setClubs(enhanced);
+          setActiveIndex(0);
+
+        } else {
+          console.warn("Unexpected /clubs response shape:", data);
           setClubs([]);
         }
-      } finally {
-        if (mounted) setLoading(false);
       }
-    })();
-    return () => (mounted = false);
-  }, []);
-
-  useEffect(() => {
-    function update() {
-      const w = window.innerWidth;
-      if (w < 640) {
-        setItemsPerPage(1);
-      } else {
-        setItemsPerPage(4);
+    } catch (err) {
+      console.error("Ошибка загрузки клубов:", err);
+      if (mounted) {
+        setLoadError(err.message || "Ошибка загрузки");
+        setClubs([]);
       }
-      setPageIndex(0);
+    } finally {
+      if (mounted) setLoading(false);
     }
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
+  })();
 
-  const pages = chunkArray(clubs, itemsPerPage);
-  const totalPages = Math.max(1, pages.length);
+  return () => {
+    mounted = false;
+  };
+}, []);
 
-  useEffect(() => {
-    if (pageIndex >= totalPages) setPageIndex(totalPages - 1);
-  }, [totalPages, pageIndex]);
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const drag = { active: false, startX: 0, deltaX: 0 };
-
-    const onPointerDown = (e) => {
-      drag.active = true;
-      drag.startX = (e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0);
-      drag.deltaX = 0;
-      el.style.transition = "none";
-    };
-
-    const onPointerMove = (e) => {
-      if (!drag.active) return;
-      const x = (e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0);
-      drag.deltaX = x - drag.startX;
-      const viewportW = el.parentElement.clientWidth || window.innerWidth;
-      const percentDelta = (drag.deltaX / viewportW) * 100;
-      const containerPercent = -(pageIndex * 100) / totalPages + (percentDelta / totalPages);
-      el.style.transform = `translateX(${containerPercent}%)`;
-    };
-
-    const onPointerUp = () => {
-      if (!drag.active) return;
-      const dx = drag.deltaX;
-      const threshold = 50;
-      el.style.transition = "transform 300ms ease";
-      if (dx < -threshold && pageIndex < totalPages - 1) {
-        setPageIndex((p) => p + 1);
-      } else if (dx > threshold && pageIndex > 0) {
-        setPageIndex((p) => p - 1);
-      } else {
-        const percent = -(pageIndex * 100) / totalPages;
-        el.style.transform = `translateX(${percent}%)`;
-      }
-      drag.active = false;
-      drag.startX = 0;
-      drag.deltaX = 0;
-    };
-
-    el.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    el.addEventListener("touchstart", onPointerDown, { passive: true });
-    window.addEventListener("touchmove", onPointerMove, { passive: true });
-    window.addEventListener("touchend", onPointerUp);
-
-    return () => {
-      el.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      el.removeEventListener("touchstart", onPointerDown);
-      window.removeEventListener("touchmove", onPointerMove);
-      window.removeEventListener("touchend", onPointerUp);
-    };
-  }, [pageIndex, totalPages]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    el.style.transition = "transform 300ms ease";
-    const percent = -(pageIndex * 100) / totalPages;
-    el.style.transform = `translateX(${percent}%)`;
-  }, [pageIndex, totalPages]);
-
-  const goPrev = () => setPageIndex((p) => Math.max(0, p - 1));
-  const goNext = () => setPageIndex((p) => Math.min(totalPages - 1, p + 1));
+  const activeClub = clubs[activeIndex] || null;
 
   const openClub = (club) => navigate(`/clubs/${club.id}`);
 
-  const almatyCenter = [43.238949, 76.889709];
-
   return (
-    <div className="min-h-screen bg-[#151515] text-white font-sans">
+    <div className="min-h-screen bg-[#05050b] text-white font-sans">
       <Navbar onMenuClick={() => setMenuOpen(true)} />
       <MenuModal isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <div className="max-w-6xl mx-auto px-6 pt-8">
-        <div className="flex justify-center mb-6">
-          <div className="flex items-center gap-2 bg-[#2A2A2A] px-4 py-2 rounded-full">
-            <MapPin size={16} />
-            <span>Алматы</span>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
+        {/* Location & title */}
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 shadow-sm backdrop-blur">
+            <MapPin size={16} className="text-blue-400" />
+            <span className="text-sm font-medium text-gray-100">Алматы</span>
+          </div>
+
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              Видеоигровые клубы Алматы
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-400">
+              Таңдаулы клубтардың баннерін қарап шығыңыз немесе картадан бірін таңдаңыз.
+            </p>
           </div>
         </div>
 
-        <h2 className="text-center text-lg text-gray-300 mb-6">Компьютерные клубы:</h2>
+        {/* HERO + SIDE LIST */}
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,1.1fr)] mb-10">
+          {/* LEFT: негізгі баннер */}
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#090812] via-[#090818] to-[#050509] border border-white/10 shadow-2xl">
+            {/* Баннер суреті (егер бар болса) */}
+            {activeClub?.bannerUrl && (
+              <img
+                src={activeClub.bannerUrl}
+                alt={activeClub.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
 
-        <div className="relative bg-[#1A1A1A] p-6 rounded-xl shadow-lg mb-10">
-          <button onClick={goPrev} className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/60">‹</button>
-          <button onClick={goNext} className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/60">›</button>
+            {/* Қара градиент, чтобы текст хорошо оқылсын */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/10" />
 
-          <div className="overflow-hidden">
-            <div ref={containerRef} className="flex w-full" style={{ width: `${totalPages * 100}%`, transform: `translateX(${-(pageIndex * 100) / totalPages}%)` }}>
-              {pages.length === 0 ? (
-                <div className="w-full p-2">
-                  {loading ? <div className="text-center text-gray-400 py-8">Загрузка...</div> : loadError ? <div className="text-center text-red-400 py-8">Ошибка: {loadError}</div> : <div className="text-center text-gray-400 py-8">Клубы не найдены</div>}
+            {/* Контент */}
+            <div className="relative z-10 flex flex-col justify-between h-full px-6 sm:px-10 py-6 sm:py-8">
+              {/* Upper text */}
+              <div className="space-y-4 max-w-lg">
+                <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-gray-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow shadow-emerald-400/70" />
+                  <span>Smart Club精选</span>
                 </div>
-              ) : (
-                pages.map((pageItems, pIdx) => (
-                  <div key={pIdx} className="w-full p-2" style={{ width: `${100 / totalPages}%` }}>
-                    <div className={`grid gap-4 ${itemsPerPage === 1 ? "grid-cols-1" : "grid-cols-2 grid-rows-2"}`}>
-                      {pageItems.map((club, idx) => (
-                        <div key={club.id ?? idx} onClick={() => openClub(club)} className={`p-4 border-2 rounded-lg cursor-pointer transition ${ (pIdx * itemsPerPage + idx) % 2 === 0 ? "border-fuchsia-500" : "border-indigo-500" } hover:bg-[#2A2A2A]`}>
-                          <div className="font-extrabold text-xl mb-1">{club.name}</div>
-                          <div className="text-gray-400 text-sm">{club.address}</div>
-                        </div>
-                      ))}
 
-                      {itemsPerPage > pageItems.length && Array.from({ length: itemsPerPage - pageItems.length }).map((_, i) => (
-                        <div key={`empty-${i}`} className="p-4 border-2 border-transparent rounded-lg bg-transparent" />
-                      ))}
+                <h2 className="text-2xl sm:text-3xl font-semibold leading-tight">
+                  {activeClub ? activeClub.name : "Клуб таңдау жүріп жатыр..."}
+                </h2>
+
+                <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                  {activeClub?.description ||
+                    "Алматыдағы заманауи киберспорт клубы. Жоғары FPS, ыңғайлы орындығылар және достық атмосфера – бәрі бір жерде."}
+                </p>
+
+                {activeClub?.address && (
+                  <p className="text-[11px] sm:text-xs text-gray-400">
+                    📍 {activeClub.address}
+                  </p>
+                )}
+              </div>
+
+              {/* Bottom actions */}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => activeClub && openClub(activeClub)}
+                  className="inline-flex items-center justify-center rounded-full bg-white text-black px-5 py-2 text-sm font-medium shadow-md hover:bg-gray-100 transition"
+                >
+                  Бронь жасау
+                </button>
+
+                <button
+                  onClick={() => activeClub && openClub(activeClub)}
+                  className="inline-flex items-center justify-center rounded-full bg-white/5 px-4 py-2 text-sm text-gray-100 border border-white/15 hover:bg-white/10 transition"
+                >
+                  Толығырақ
+                </button>
+
+                {activeClub?.priceFrom && (
+                  <div className="ml-auto text-right text-xs sm:text-sm text-gray-300">
+                    <div className="text-[10px] uppercase tracking-widest text-gray-500">
+                      Баға сағатына
+                    </div>
+                    <div className="font-semibold">
+                      {activeClub.priceFrom} ₸+
                     </div>
                   </div>
-                ))
-              )}
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-center mt-6 gap-2">
-            {Array.from({ length: totalPages }).map((_, p) => (
-              <button key={p} onClick={() => setPageIndex(p)} className={`w-3 h-3 rounded-full ${p === pageIndex ? "bg-pink-500" : "bg-gray-600"}`} aria-label={`page-${p + 1}`} />
-            ))}
-          </div>
-        </div>
+          {/* RIGHT: ойын тізімі / клубтар тізімі */}
+          <aside className="space-y-3">
+            <p className="text-xs sm:text-sm text-gray-400 uppercase tracking-[0.16em]">
+              Барлық клубтар
+            </p>
 
-        <p className="text-center text-sm text-gray-400 mb-3">или укажите на карте:</p>
+            <div className="flex flex-col gap-2 max-h-[430px] overflow-y-auto pr-1 custom-scroll">
+              {loading && (
+                <div className="text-xs text-gray-500 py-4 px-2">
+                  Клубтар жүктелуде...
+                </div>
+              )}
 
-        <div className="border-2 border-pink-500 rounded-xl overflow-hidden mb-12">
-          <MapContainer center={almatyCenter} zoom={12} scrollWheelZoom={true} style={{ height: "480px", width: "100%" }}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {loadError && !loading && (
+                <div className="text-xs text-red-400 py-4 px-2">
+                  Қате: {loadError}
+                </div>
+              )}
 
-            {clubs.filter((c) => c.latitude && c.longitude).map((club) => (
-              <Marker key={club.id} position={[club.latitude, club.longitude]} icon={markerIcon} eventHandlers={{
-                click: (e) => {
-                  if (activeMarkerId === club.id) {
-                    navigate(`/clubs/${club.id}`);
-                  } else {
-                    setActiveMarkerId(club.id);
-                    try { e.target.openPopup(); } catch {}
-                  }
-                },
-                mouseover: (e) => { setActiveMarkerId(club.id); try { e.target.openPopup(); } catch {} },
-                mouseout: (e) => {}
-              }}>
-                <Popup>
-                  <div className="max-w-xs" onClick={() => navigate(`/clubs/${club.id}`)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") navigate(`/clubs/${club.id}`); }} style={{ cursor: "pointer" }}>
-                    <div className="font-bold text-sm mb-1">{club.name}</div>
-                    {club.address && <div className="text-xs text-gray-600 mb-2">{club.address}</div>}
-                    <div className="flex gap-2">
-                      <button onClick={(ev) => { ev.stopPropagation(); navigate(`/clubs/${club.id}`); }} className="px-2 py-1 rounded bg-pink-600 text-white text-xs">Подробнее</button>
-                      {club.phone && <a href={`tel:${club.phone.replace(/\D/g, "")}`} onClick={(ev) => ev.stopPropagation()} className="px-2 py-1 rounded border border-gray-300 text-xs">Позвонить</a>}
+              {!loading && !loadError && clubs.length === 0 && (
+                <div className="text-xs text-gray-500 py-4 px-2">
+                  Клубтар табылмады
+                </div>
+              )}
+
+              {clubs.map((club, idx) => {
+                const isActive = idx === activeIndex;
+                const thumb =
+                  club.thumbnailUrl || club.bannerUrl || club.imageUrl;
+
+                return (
+                  <button
+                    key={club.id ?? idx}
+                    type="button"
+                    onClick={() => setActiveIndex(idx)}
+                    className={`group w-full flex items-center gap-3 rounded-2xl px-2 py-2 sm:px-3 sm:py-2.5 text-left transition ${
+                      isActive
+                        ? "bg-white/10 border border-white/15"
+                        : "bg-transparent hover:bg-white/5 border border-transparent"
+                    }`}
+                  >
+                    <div className="relative flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-[#222]">
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt={club.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                          {club.name?.[0] || "?"}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-      </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {club.name}
+                      </div>
+                      {club.shortAddress && (
+                        <div className="text-[11px] text-gray-400 truncate">
+                          {club.shortAddress}
+                        </div>
+                      )}
+                    </div>
+
+                    {isActive && (
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-blue-400">
+                        Active
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+        </section>
+
+        {/* MAP SECTION */}
+        <section className="space-y-3">
+          <p className="text-center text-xs sm:text-sm text-gray-400">
+            Немесе клубты картадан таңдаңыз:
+          </p>
+
+          <div className="relative rounded-2xl border border-blue-500/60 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent overflow-hidden shadow-xl shadow-black/60">
+            <div className="absolute top-3 left-4 z-10 rounded-full bg-black/60 backdrop-blur px-3 py-1 text-[11px] text-gray-200 border border-white/10">
+              Карта компьютерлік клубтар
+            </div>
+
+            <MapContainer
+              center={almatyCenter}
+              zoom={12}
+              scrollWheelZoom={true}
+              style={{ height: "480px", width: "100%" }}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+              {clubs
+                .filter((c) => c.latitude && c.longitude)
+                .map((club) => (
+                  <Marker
+                    key={club.id}
+                    position={[club.latitude, club.longitude]}
+                    icon={markerIcon}
+                    eventHandlers={{
+                      click: (e) => {
+                        if (activeMarkerId === club.id) {
+                          openClub(club);
+                        } else {
+                          setActiveMarkerId(club.id);
+                          try {
+                            e.target.openPopup();
+                          } catch {}
+                        }
+                      },
+                      mouseover: (e) => {
+                        setActiveMarkerId(club.id);
+                        try {
+                          e.target.openPopup();
+                        } catch {}
+                      },
+                      mouseout: () => {},
+                    }}
+                  >
+                    <Popup>
+                      <div
+                        className="max-w-xs space-y-1"
+                        onClick={() => openClub(club)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") openClub(club);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="font-semibold text-sm mb-1">
+                          {club.name}
+                        </div>
+                        {club.address && (
+                          <div className="text-[11px] text-gray-600 mb-2">
+                            {club.address}
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              openClub(club);
+                            }}
+                            className="px-2 py-1 rounded bg-blue-600 text-white text-[11px] hover:bg-blue-700 transition"
+                          >
+                            Подробнее
+                          </button>
+                          {club.phone && (
+                            <a
+                              href={`tel:${club.phone.replace(/\D/g, "")}`}
+                              onClick={(ev) => ev.stopPropagation()}
+                              className="px-2 py-1 rounded border border-gray-300 text-[11px] text-gray-800 bg-white hover:bg-gray-100 transition"
+                            >
+                              Позвонить
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+            </MapContainer>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
