@@ -570,7 +570,7 @@ export default function BookingWidget({
         <div className="flex items-center gap-3">
           {!user && <div className="text-xs text-gray-400">Войдите, чтобы бронировать</div>}
           <button onClick={handleReserve} disabled={!user || !selectedSeats.length} className={`px-4 py-2 rounded-lg font-semibold text-white ${!user || !selectedSeats.length ? "bg-gray-600" : "bg-gradient-to-r from-pink-500 to-purple-500"}`}>
-            Book
+            Забронировать
           </button>
         </div>
       </div>

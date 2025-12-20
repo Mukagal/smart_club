@@ -119,7 +119,7 @@ useEffect(() => {
               Видеоигровые клубы Алматы
             </h1>
             <p className="text-xs sm:text-sm text-gray-400">
-              Таңдаулы клубтардың баннерін қарап шығыңыз немесе картадан бірін таңдаңыз.
+              Просмотрите баннеры ваших любимых клубов или выберите один на карте.
             </p>
           </div>
         </div>
@@ -146,7 +146,7 @@ useEffect(() => {
               <div className="space-y-4 max-w-lg">
                 <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-gray-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow shadow-emerald-400/70" />
-                  <span>Smart Club精选</span>
+                  <span>Smart Club</span>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-semibold leading-tight">
@@ -171,20 +171,13 @@ useEffect(() => {
                   onClick={() => activeClub && openClub(activeClub)}
                   className="inline-flex items-center justify-center rounded-full bg-white text-black px-5 py-2 text-sm font-medium shadow-md hover:bg-gray-100 transition"
                 >
-                  Бронь жасау
-                </button>
-
-                <button
-                  onClick={() => activeClub && openClub(activeClub)}
-                  className="inline-flex items-center justify-center rounded-full bg-white/5 px-4 py-2 text-sm text-gray-100 border border-white/15 hover:bg-white/10 transition"
-                >
-                  Толығырақ
+                  Подробнее
                 </button>
 
                 {activeClub?.priceFrom && (
                   <div className="ml-auto text-right text-xs sm:text-sm text-gray-300">
                     <div className="text-[10px] uppercase tracking-widest text-gray-500">
-                      Баға сағатына
+                      Цена за час
                     </div>
                     <div className="font-semibold">
                       {activeClub.priceFrom} ₸+
@@ -198,25 +191,25 @@ useEffect(() => {
           {/* RIGHT: ойын тізімі / клубтар тізімі */}
           <aside className="space-y-3">
             <p className="text-xs sm:text-sm text-gray-400 uppercase tracking-[0.16em]">
-              Барлық клубтар
+              Все клубы
             </p>
 
             <div className="flex flex-col gap-2 max-h-[430px] overflow-y-auto pr-1 custom-scroll">
               {loading && (
                 <div className="text-xs text-gray-500 py-4 px-2">
-                  Клубтар жүктелуде...
+                  Клубы загружается...
                 </div>
               )}
 
               {loadError && !loading && (
                 <div className="text-xs text-red-400 py-4 px-2">
-                  Қате: {loadError}
+                  Ошибка: {loadError}
                 </div>
               )}
 
               {!loading && !loadError && clubs.length === 0 && (
                 <div className="text-xs text-gray-500 py-4 px-2">
-                  Клубтар табылмады
+                  Клубы не найдены
                 </div>
               )}
 
@@ -276,12 +269,12 @@ useEffect(() => {
         {/* MAP SECTION */}
         <section className="space-y-3">
           <p className="text-center text-xs sm:text-sm text-gray-400">
-            Немесе клубты картадан таңдаңыз:
+            Или выберите через карту:
           </p>
 
           <div className="relative rounded-2xl border border-blue-500/60 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent overflow-hidden shadow-xl shadow-black/60">
             <div className="absolute top-3 left-4 z-10 rounded-full bg-black/60 backdrop-blur px-3 py-1 text-[11px] text-gray-200 border border-white/10">
-              Карта компьютерлік клубтар
+              Карта компьютерных клубов
             </div>
 
             <MapContainer

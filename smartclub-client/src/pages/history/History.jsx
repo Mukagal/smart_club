@@ -179,10 +179,20 @@ export default function History() {
                 </div>
 
                 <div className="w-full md:w-48 flex flex-col items-start md:items-end gap-3 md:gap-0">
-                  <div className="text-sm text-gray-400 text-left md:text-right w-full">
-                    <div>Статус: <span className="font-semibold text-white">{r.status}</span></div>
-                    <div className="mt-2">Стоимость: <span className="font-semibold text-white">{r.totalPrice ? `${r.totalPrice} ₸` : "—"}</span></div>
+                  <div className="text-sm text-gray-400 flex items-center gap-4 md:flex-col md:items-end md:gap-2 md:text-right w-full">
+                    <div className="whitespace-nowrap">
+                      Статус:{" "}
+                      <span className="font-semibold text-white">{r.status}</span>
+                    </div>
+
+                    <div className="whitespace-nowrap">
+                      Стоимость:{" "}
+                      <span className="font-semibold text-white">
+                        {r.totalPrice ? `${r.totalPrice} ₸` : "—"}
+                      </span>
+                    </div>
                   </div>
+
 
                   <div className="flex flex-col gap-2 mt-3 md:mt-0 w-full md:items-end">
                     {r.status !== "CANCELLED" && new Date(r.end) > new Date() ? (

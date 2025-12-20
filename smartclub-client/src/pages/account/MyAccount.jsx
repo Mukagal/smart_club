@@ -411,10 +411,9 @@ export default function MyAccount() {
             {active.map((a) => (
               <div
                 key={a.id}
-                className="bg-[#1E1E1E] p-4 rounded-lg border border-gray-800 flex flex-col md:flex-row md:justify-between gap-4"
-              >
+                className="bg-[#1E1E1E] p-4 rounded-lg border border-gray-800 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="flex-1">
-                  <div className="font-extrabold text-lg tracking-wide mb-1">
+                  <div className="font-bold text-base md:text-lg mb-1">
                     {a.clubName ?? a.clubId}
                   </div>
                   {a.clubId &&
@@ -430,25 +429,24 @@ export default function MyAccount() {
                   <div className="text-sm text-gray-300">
                     Время: {formatDateRangeShort(a.start, a.end)}
                   </div>
-                  <div className="text-sm text-gray-300 mt-1">
-                    Места:{" "}
-                    {a.seatLabels && a.seatLabels.length
-                      ? a.seatLabels.join(", ")
-                      : a.seatIds
-                      ? a.seatIds.join(", ")
-                      : "—"}
+                  <div className="text-sm text-gray-300 mt-1 break-words">
+                    <span className="block md:inline">Места:</span>
+                    <span className="block md:inline md:ml-1 max-h-16 overflow-hidden md:max-h-none">
+                      {a.seatLabels?.length
+                        ? a.seatLabels.join(", ")
+                        : "—"}
+                    </span>
                   </div>
                 </div>
 
-                <div className="w-48 flex flex-col items-end justify-between">
-                  <div className="text-sm text-gray-400 text-right">
-                    <div>
+                <div className="flex flex-col justify-between md:w-56 md:items-center shrink-0">
+                  <div className="text-sm text-gray-400 flex items-center gap-4 md:flex-col md:items-end md:gap-1 md:text-right">
+                    <div className="whitespace-nowrap">
                       Статус:{" "}
-                      <span className="font-semibold text-white">
-                        {a.status}
-                      </span>
+                      <span className="font-semibold text-white">{a.status}</span>
                     </div>
-                    <div className="mt-2">
+
+                    <div className="whitespace-nowrap">
                       Стоимость:{" "}
                       <span className="font-semibold text-white">
                         {a.totalPrice ? `${a.totalPrice} ₸` : "—"}
@@ -456,10 +454,11 @@ export default function MyAccount() {
                     </div>
                   </div>
 
+
                   <div className="flex flex-col gap-2 mt-3 md:mt-0">
                     <button
                       onClick={() => handleCancelReservation(a.id)}
-                      className="px-3 py-2 rounded bg-red-600 text-white text-sm"
+                      className="w-full md:w-auto px-3 py-2 rounded bg-red-600 text-white text-sm"
                     >
                       Отменить бронь
                     </button>
